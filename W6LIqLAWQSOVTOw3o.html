@@ -1,0 +1,512 @@
+<html><head><base href="." /><title>Omeganum Simulator</title><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script><style>
+body {
+    background: #0a0a2a;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    background: rgba(0, 20, 40, 0.9);
+    border: 2px solid #00ff00;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 800px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.display {
+    font-size: 24px;
+    margin: 20px 0;
+    padding: 10px;
+    background: #000;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    min-height: 100px;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+button {
+    background: #001400;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: #002800;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.visualization {
+    width: 100%;
+    height: 200px;
+    background: #000;
+    border: 1px solid #00ff00;
+    border-radius: 5px;
+    margin: 20px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    background: #00ff00;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    animation: float 3s infinite linear;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0) translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-200px) translateX(100px);
+        opacity: 0;
+    }
+}
+
+.status {
+    font-size: 14px;
+    margin-top: 10px;
+    color: #00aa00;
+}
+
+.game-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.resources {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+    padding: 10px;
+    background: rgba(0, 20, 0, 0.3);
+    border-radius: 5px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #001400;
+    border: 1px solid #00ff00;
+    border-radius: 3px;
+    margin: 10px 0;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #00ff00;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.shop-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 20, 40, 0.95);
+    border: 2px solid #00ff00;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 1000;
+    max-width: 500px;
+    width: 90%;
+}
+
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #00ff00;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.shop-item:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.close-shop {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    color: #00ff00;
+}
+
+.stat-upgrades {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    border-bottom: 1px solid #00ff00;
+    margin: 5px 0;
+}
+
+#playerStats {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(0, 40, 0, 0.2);
+    border-radius: 5px;
+}
+</style></head><body>
+<div class="container">
+    <h1>Omeganum Simulator</h1>
+    <div class="display" id="output">Initializing Omeganum sequences...</div>
+    <div class="resources">
+        <div>Energy: <span id="energy">100</span></div>
+        <div>Level: <span id="level">1</span></div>
+        <div>Score: <span id="score">0</span></div>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+    <div class="visualization" id="vizContainer"></div>
+    <div class="controls">
+        <button onclick="generateOmeganum()">Generate Number</button>
+        <button onclick="analyzeSequence()">Analyze Pattern</button>
+        <button onclick="visualizeGrowth()">Visualize Growth</button>
+        <button onclick="exploreProperties()">Explore Properties</button>
+    </div>
+    <div class="game-controls">
+        <button onclick="harvestEnergy()">Harvest Energy</button>
+        <button onclick="upgradeSystem()">Upgrade System</button>
+        <button onclick="stabilizeSystem()">Stabilize</button>
+        <button onclick="openShop()">Shop</button>
+    </div>
+    <div class="status" id="status"></div>
+</div>
+
+<div id="shopModal" class="shop-modal">
+    <span class="close-shop" onclick="closeShop()">×</span>
+    <h2>Shop</h2>
+    <h3>Items</h3>
+    <div class="shop-item">
+        <span>Energy Multiplier</span>
+        <button onclick="buyShopItem('energyMult')">Buy (100 energy)</button>
+    </div>
+    <div class="shop-item">
+        <span>Stability Booster</span>
+        <button onclick="buyShopItem('stabilityBoost')">Buy (150 energy)</button>
+    </div>
+    <div class="shop-item">
+        <span>Auto Harvester</span>
+        <button onclick="buyShopItem('autoHarvest')">Buy (200 energy)</button>
+    </div>
+    <h3>Stat Upgrades</h3>
+    <div id="playerStats">
+    </div>
+    <div class="stat-upgrades">
+        <button onclick="upgradePlayerStat('harvestPower')">Upgrade Harvest Power</button>
+        <button onclick="upgradePlayerStat('analysisSpeed')">Upgrade Analysis Speed</button>
+        <button onclick="upgradePlayerStat('stabilityControl')">Upgrade Stability Control</button>
+        <button onclick="upgradePlayerStat('generationEfficiency')">Upgrade Generation Efficiency</button>
+    </div>
+</div>
+
+<script>
+let currentOmeganum = null;
+let particleInterval;
+let gameState = {
+    energy: 100,
+    level: 1,
+    score: 0,
+    stability: 100,
+    upgradeCost: 50,
+    lastAction: Date.now(),
+    energyMultiplier: 1,
+    stabilityBooster: 1,
+    autoHarvester: false,
+    stats: {
+        harvestPower: 1,
+        analysisSpeed: 1,
+        stabilityControl: 1,
+        generationEfficiency: 1
+    },
+    statUpgradeCosts: {
+        harvestPower: 50,
+        analysisSpeed: 50,
+        stabilityControl: 50, 
+        generationEfficiency: 50
+    }
+};
+
+function openShop() {
+    document.getElementById('shopModal').style.display = 'block';
+    updateStatDisplay();
+}
+
+function closeShop() {
+    document.getElementById('shopModal').style.display = 'none';
+}
+
+function buyShopItem(item) {
+    const costs = {
+        energyMult: 100,
+        stabilityBoost: 150,
+        autoHarvest: 200
+    };
+
+    if (gameState.energy >= costs[item]) {
+        gameState.energy -= costs[item];
+        switch(item) {
+            case 'energyMult':
+                gameState.energyMultiplier += 0.5;
+                document.getElementById('status').textContent = 'Energy multiplier increased!';
+                break;
+            case 'stabilityBoost':
+                gameState.stabilityBooster += 0.5;
+                document.getElementById('status').textContent = 'Stability booster increased!';
+                break;
+            case 'autoHarvest':
+                gameState.autoHarvester = true;
+                document.getElementById('status').textContent = 'Auto harvester activated!';
+                break;
+        }
+        updateDisplay();
+    } else {
+        document.getElementById('status').textContent = 'Not enough energy!';
+    }
+}
+
+function getStatUpgradeCost(stat) {
+    return Math.floor(gameState.statUpgradeCosts[stat] * Math.pow(1.15, gameState.stats[stat] - 1));
+}
+
+function upgradePlayerStat(stat) {
+    const cost = getStatUpgradeCost(stat);
+    if (gameState.energy >= cost) {
+        gameState.energy -= cost;
+        gameState.stats[stat] += 1;
+        gameState.statUpgradeCosts[stat] = getStatUpgradeCost(stat);
+        updateDisplay();
+        document.getElementById('status').textContent = `${stat.replace(/([A-Z])/g, ' $1').toLowerCase()} upgraded!`;
+        updateStatDisplay();
+    } else {
+        document.getElementById('status').textContent = `Not enough energy! Need ${cost} energy.`;
+    }
+}
+
+function updateStatDisplay() {
+    const statsDiv = document.getElementById('playerStats');
+    statsDiv.innerHTML = `
+        <div class="stat-item">
+            <span>Harvest Power: ${gameState.stats.harvestPower}</span>
+            <span>Cost: ${getStatUpgradeCost('harvestPower')} energy</span>
+        </div>
+        <div class="stat-item">
+            <span>Analysis Speed: ${gameState.stats.analysisSpeed}</span>
+            <span>Cost: ${getStatUpgradeCost('analysisSpeed')} energy</span>
+        </div>
+        <div class="stat-item">
+            <span>Stability Control: ${gameState.stats.stabilityControl}</span>
+            <span>Cost: ${getStatUpgradeCost('stabilityControl')} energy</span>
+        </div>
+        <div class="stat-item">
+            <span>Generation Efficiency: ${gameState.stats.generationEfficiency}</span>
+            <span>Cost: ${getStatUpgradeCost('generationEfficiency')} energy</span>
+        </div>
+    `;
+}
+
+function updateDisplay() {
+    document.getElementById('energy').textContent = Math.floor(gameState.energy);
+    document.getElementById('level').textContent = gameState.level;
+    document.getElementById('score').textContent = Math.floor(gameState.score);
+    document.getElementById('progressBar').style.width = `${gameState.stability}%`;
+}
+
+function harvestEnergy() {
+    if (currentOmeganum) {
+        const harvest = Math.random() * 20 * gameState.level * gameState.energyMultiplier * gameState.stats.harvestPower;
+        gameState.energy += harvest;
+        gameState.stability -= (Math.random() * 10) / (gameState.stabilityBooster * gameState.stats.stabilityControl);
+        gameState.score += harvest;
+        updateDisplay();
+        createParticles();
+        checkGameState();
+    } else {
+        document.getElementById('status').textContent = 'Generate a number first!';
+    }
+}
+
+function upgradeSystem() {
+    if (gameState.energy >= gameState.upgradeCost) {
+        gameState.energy -= gameState.upgradeCost;
+        gameState.level += 1;
+        gameState.upgradeCost *= 1.5;
+        gameState.score += 100;
+        updateDisplay();
+        document.getElementById('status').textContent = `System upgraded to level ${gameState.level}!`;
+    } else {
+        document.getElementById('status').textContent = `Need ${gameState.upgradeCost} energy to upgrade!`;
+    }
+}
+
+function stabilizeSystem() {
+    const cost = 10;
+    if (gameState.energy >= cost) {
+        gameState.energy -= cost;
+        gameState.stability = Math.min(100, gameState.stability + 20);
+        updateDisplay();
+        document.getElementById('status').textContent = 'System stabilized!';
+    } else {
+        document.getElementById('status').textContent = 'Not enough energy to stabilize!';
+    }
+}
+
+function checkGameState() {
+    if (gameState.stability <= 0) {
+        document.getElementById('status').textContent = 'SYSTEM CRASH! Generate new Omeganum to continue.';
+        currentOmeganum = null;
+        gameState.stability = 100;
+        gameState.energy = Math.max(50, gameState.energy / 2);
+        updateDisplay();
+    }
+}
+
+function generateOmeganum() {
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    
+    const base = Math.floor(Math.random() * 1000) + 1;
+    const exponent = Math.floor(Math.random() * 3) + 1;
+    currentOmeganum = Math.pow(base, exponent);
+    
+    output.innerHTML = `Generated Number:<br>${currentOmeganum.toLocaleString()}`;
+    status.textContent = `A ${exponent}-power number generated`;
+    
+    createParticles();
+    gameState.stability = 100;
+    updateDisplay();
+}
+
+function analyzeSequence() {
+    if (!currentOmeganum) {
+        document.getElementById('status').textContent = 'Please generate a number first';
+        return;
+    }
+    
+    const output = document.getElementById('output');
+    const digits = currentOmeganum.toString().split('');
+    const patterns = analyzeDigitPatterns(digits);
+    
+    output.innerHTML = `Pattern Analysis:<br>
+        Digit frequency: ${JSON.stringify(patterns.frequency)}<br>
+        Sequences detected: ${patterns.sequences}`;
+    
+    gameState.score += 10 * gameState.level * gameState.stats.analysisSpeed;
+    updateDisplay();
+}
+
+function visualizeGrowth() {
+    const viz = document.getElementById('vizContainer');
+    viz.innerHTML = '';
+    
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.animationDelay = `${Math.random() * 3}s`;
+        viz.appendChild(particle);
+    }
+}
+
+function exploreProperties() {
+    if (!currentOmeganum) {
+        document.getElementById('status').textContent = 'Please generate a number first';
+        return;
+    }
+    
+    const output = document.getElementById('output');
+    const properties = {
+        length: currentOmeganum.toString().length,
+        firstDigit: currentOmeganum.toString()[0],
+        lastDigit: currentOmeganum.toString().slice(-1)
+    };
+    
+    output.innerHTML = `Number Properties:<br>
+        Number of digits: ${properties.length}<br>
+        First digit: ${properties.firstDigit}<br>
+        Last digit: ${properties.lastDigit}`;
+    
+    gameState.score += 5 * gameState.level;
+    updateDisplay();
+}
+
+function analyzeDigitPatterns(digits) {
+    const frequency = {};
+    let sequences = [];
+    
+    digits.forEach(digit => {
+        frequency[digit] = (frequency[digit] || 0) + 1;
+    });
+    
+    for (let i = 0; i < digits.length - 2; i++) {
+        if (digits[i] === digits[i+1] && digits[i] === digits[i+2]) {
+            sequences.push(`${digits[i]} repeated at position ${i}`);
+        }
+    }
+    
+    return {
+        frequency,
+        sequences: sequences.length > 0 ? sequences.join(', ') : 'No significant sequences detected'
+    };
+}
+
+function createParticles() {
+    clearInterval(particleInterval);
+    visualizeGrowth();
+    particleInterval = setInterval(visualizeGrowth, 3000);
+}
+
+setInterval(() => {
+    if (gameState.autoHarvester && currentOmeganum) {
+        harvestEnergy();
+    }
+}, 5000);
+
+setInterval(() => {
+    if (gameState.energy > 0) {
+        gameState.energy -= 0.1 * gameState.level;
+        updateDisplay();
+    }
+}, 1000);
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('status').textContent = 'Ready to generate numbers';
+    updateDisplay();
+});
+</script></body></html>
